@@ -1,6 +1,6 @@
 ---
 name: n8n-code-javascript
-description: Write JavaScript code in n8n Code nodes. Use when writing JavaScript in n8n, using $input/$json/$node syntax, making HTTP requests with $helpers, working with dates using DateTime, troubleshooting Code node errors, or choosing between Code node modes.
+description: Write JavaScript code in n8n Code nodes. Use when writing JavaScript in n8n, using $input/$json/$node syntax, making HTTP requests with $helpers, working with dates using DateTime, troubleshooting Code node errors, choosing between Code node modes, or doing any custom data transformation in n8n. Always use this skill when a workflow needs a Code node — whether for data aggregation, filtering, API calls, format conversion, batch processing logic, or any custom JavaScript. Covers SplitInBatches loop patterns, cross-iteration data, pairedItem, and real-world production patterns. EXCEPTION — for the AI-agent-callable Custom Code Tool (@n8n/n8n-nodes-langchain.toolCode, a tool attached to an AI Agent), use the n8n-code-tool skill instead; it has a different runtime contract.
 domain: ops
 mcp-bundled: true
 ---
@@ -35,7 +35,9 @@ return processed;
 2. **Access data**: `$input.all()`, `$input.first()`, or `$input.item`
 3. **CRITICAL**: Must return `[{json: {...}}]` format
 4. **CRITICAL**: Webhook data is under `$json.body` (not `$json` directly)
-5. **Built-ins available**: $helpers.httpRequest(), DateTime (Luxon), $jmespath()
+5. **Built-ins available**: $helpers.httpRequest() (no auth), DateTime (Luxon), $jmespath(). **Not available**: $helpers.httpRequestWithAuthentication, $env (when N8N_BLOCK_ENV_ACCESS_IN_NODE=true), require() (unless allowlisted)
+6. **Instance-allowlisted libraries**: Self-hosted instances can allowlist modules via `N8N_RUNNERS_ALLOWED_BUILT_IN_MODULES` and `N8N_RUNNERS_ALLOWED_EXTERNAL_MODULES` (legacy: `NODE_FUNCTION_ALLOW_BUILTIN` / `NODE_FUNCTION_ALLOW_EXTERNAL`). If the user says their instance allows specific modules (e.g. `axios`, `lodash`, `crypto`), use them via `require()` — don't refuse. If unsure, ask or default to built-ins only.
+7. **Wrong skill?** If you're writing code for a **Custom Code Tool** attached to an AI Agent (`@n8n/n8n-nodes-langchain.toolCode`), stop — that node has a different contract (input via `query`, must return a string, no `$input`/`$helpers`). Use the **n8n-code-tool** skill.
 
 ---
 
@@ -615,6 +617,91 @@ return result;
 
 ---
 
+## Production Gotchas
+
+Hard-won lessons from real-world n8n workflow deployments:
+
+### SplitInBatches Loop Semantics
+
+The SplitInBatches node has two outputs — and the naming is counterintuitive:
+- `main[0]` = **done** — fires ONCE after all batches are processed
+- `main[1]` = **each batch** — fires for every batch (this is the loop body)
+
+Always add a **Limit 1** node after the done output before downstream processing, as a safety against edge cases where done fires with extra items.
+
+### Cross-Iteration Data Accumulation (CRITICAL)
+
+After a SplitInBatches loop, `$('Node Inside Loop').all()` returns **ONLY the last iteration's items**, not cumulative results. This silently drops data from all but the final batch.
+
+**Fix**: Use workflow static data to accumulate across iterations:
+
+```javascript
+// BEFORE the loop (reset accumulator):
+const staticData = $getWorkflowStaticData('global');
+staticData.results = [];
+return $input.all();
+
+// INSIDE the loop body (accumulate):
+const staticData = $getWorkflowStaticData('global');
+const results = [];
+for (const item of $input.all()) {
+  const processed = { /* ... */ };
+  results.push({ json: processed });
+  staticData.results.push(processed);
+}
+return results;
+
+// AFTER the loop (read accumulated data):
+const staticData = $getWorkflowStaticData('global');
+const allResults = staticData.results || [];
+// Now aggregate across ALL iterations
+```
+
+### pairedItem for New Output Items
+
+When creating new items that don't map 1:1 to input items, include `pairedItem` — otherwise downstream Set nodes fail with `paired_item_no_info`:
+
+```javascript
+const results = [];
+for (let i = 0; i < $input.all().length; i++) {
+  const item = $input.all()[i];
+  results.push({
+    json: { /* new data */ },
+    pairedItem: { item: i }
+  });
+}
+return results;
+```
+
+### Correct Node Reference Syntax
+
+```javascript
+// ❌ WRONG - .json directly on node reference
+const data = $('HTTP Request').json;
+
+// ✅ CORRECT - call .first() then access .json
+const data = $('HTTP Request').first().json;
+
+// ✅ Also correct - get all items
+const allData = $('HTTP Request').all();
+```
+
+### Float Precision for Price/Currency Comparison
+
+When comparing prices or currency values, floating point noise can cause false positives. Round to cents:
+
+```javascript
+// ❌ Unreliable - float comparison
+if (newPrice !== oldPrice) { /* triggers on noise */ }
+
+// ✅ Reliable - compare at cent level
+if (Math.round(newPrice * 100) !== Math.round(oldPrice * 100)) {
+  // Real price change detected
+}
+```
+
+---
+
 ## When to Use Code Node
 
 Use Code node when:
@@ -646,8 +733,8 @@ Consider other nodes when:
 
 **n8n MCP Tools Expert**:
 - How to find Code node: `search_nodes({query: "code"})`
-- Get configuration help: `get_node_essentials("nodes-base.code")`
-- Validate code: `validate_node_operation()`
+- Get configuration help: `get_node({nodeType: "nodes-base.code"})`
+- Validate code: `validate_node({nodeType: "nodes-base.code", config: {...}})`
 
 **n8n Node Configuration**:
 - Mode selection (All Items vs Each Item)

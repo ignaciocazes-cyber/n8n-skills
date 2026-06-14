@@ -5,7 +5,7 @@
 set -e
 
 DIST_DIR="dist"
-VERSION="1.1.0"
+VERSION="1.11.1"
 
 echo "🔨 Building n8n-skills distribution packages..."
 
@@ -17,6 +17,7 @@ echo "🗑️  Removing old zip files..."
 rm -f "$DIST_DIR"/*.zip
 
 # Build individual skill zips (for Claude.ai)
+# Structure: skill-name/SKILL.md at zip root (not nested under skills/)
 echo "📦 Building individual skill zips for Claude.ai..."
 
 SKILLS=(
@@ -25,11 +26,14 @@ SKILLS=(
     "n8n-workflow-patterns"
     "n8n-validation-expert"
     "n8n-node-configuration"
+    "n8n-code-javascript"
+    "n8n-code-python"
+    "n8n-code-tool"
 )
 
 for skill in "${SKILLS[@]}"; do
     echo "   - $skill"
-    zip -rq "$DIST_DIR/${skill}-v${VERSION}.zip" "skills/${skill}/" -x "*.DS_Store"
+    (cd skills && zip -rq "../$DIST_DIR/${skill}-v${VERSION}.zip" "${skill}/" -x "*.DS_Store")
 done
 
 # Build complete bundle (for Claude Code)
@@ -39,7 +43,7 @@ zip -rq "$DIST_DIR/n8n-mcp-skills-v${VERSION}.zip" \
     README.md \
     LICENSE \
     skills/ \
-    -x "*.DS_Store"
+    -x "*.DS_Store" -x "*-workspace/*" -x "*-workspace/"
 
 # Show results
 echo ""

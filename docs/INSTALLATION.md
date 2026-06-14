@@ -165,6 +165,22 @@ function loadSkillsFromDirectory(dir: string) {
 
 ---
 
+### Method 4: Other Agents and IDEs (Antigravity, etc.)
+
+Agent Skills are an open standard — any agent that supports the SKILL.md format can use these skills, not just Claude.
+
+**Step 1**: Clone or download this repository
+
+```bash
+git clone https://github.com/czlonkowski/n8n-skills.git
+```
+
+**Step 2**: Copy the skill folders from `skills/` into your agent's skills directory. For example, for Google Antigravity follow its skills documentation (https://antigravity.google/docs/skills); other agents/IDEs have equivalent directories.
+
+Each skill is a self-contained folder with a `SKILL.md` entry point plus reference files, so no transformation is needed.
+
+---
+
 ## Verification
 
 ### Test Installation

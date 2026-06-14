@@ -72,7 +72,7 @@ const email = $json.body.email;  // Correct in Code node
 "Find me a Slack node"
 "How do I search for database nodes?"
 "Validate this node configuration"
-"What's the difference between get_node_info and get_node_essentials?"
+"What's the difference between get_node({detail: "full"}) and get_node?"
 "Which MCP tool should I use to create workflows?"
 ```
 
@@ -98,9 +98,9 @@ This returns:
 ⚠️ Important: Use different formats for different tools!
 
 Next, get node details:
-get_node_essentials({nodeType: "nodes-base.slack"})
+get_node({nodeType: "nodes-base.slack"})
 
-This returns focused 5KB data vs 100KB+ from get_node_info.
+This returns focused 5KB data vs 100KB+ from get_node({detail: "full"}).
 ```
 
 ---
@@ -135,7 +135,7 @@ Webhook Trigger → [Transform] → Slack Notification
 
 Workflow Checklist:
 □ Search for nodes (search_nodes)
-□ Get node configurations (get_node_essentials)
+□ Get node configurations (get_node)
 □ Create workflow structure
 □ Add data mappings (expressions)
 □ Validate workflow
@@ -174,7 +174,7 @@ Webhook → OpenStreetMap → NWS → Slack
 Validation Error: "Required field 'channel' missing"
 
 Fix:
-validate_node_operation({
+validate_node({
   nodeType: "nodes-base.slack",
   config: {
     resource: "message",
@@ -264,7 +264,7 @@ Skills work **together automatically**. Here's how:
 ```
 → Searches: search_nodes({query: "webhook"})
 → Searches: search_nodes({query: "slack"})
-→ Gets details: get_node_essentials for both
+→ Gets details: get_node for both
 ```
 
 **Step 3**: n8n Node Configuration activates
@@ -401,9 +401,9 @@ Always ask for validation:
 ## Tool Availability
 
 **Always Available** (no n8n API needed):
-- search_nodes, list_nodes, get_node_essentials ✅
-- validate_node_minimal, validate_node_operation ✅
-- validate_workflow, get_property_dependencies ✅
+- search_nodes, search_nodes, get_node ✅
+- validate_node({mode: "minimal"}), validate_node ✅
+- validate_workflow, get_node({mode: "search_properties"}) ✅
 - search_templates, get_template ✅
 
 **Requires n8n API** (N8N_API_URL + N8N_API_KEY):
@@ -457,7 +457,7 @@ All relevant skills will activate automatically.
 ### Request Specific Tool Usage
 
 ```
-"Use get_node_essentials to show me Slack node configuration"
+"Use get_node to show me Slack node configuration"
 ```
 
 ### Ask for Real Examples

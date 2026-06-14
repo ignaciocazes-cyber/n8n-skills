@@ -128,7 +128,7 @@ This log contains real responses from n8n-mcp tools to inform accurate skill con
 
 ### 2. MCP Tools Expert (Skill #2)
 - ✅ nodeType formats differ: `nodes-base.*` vs `n8n-nodes-base.*`
-- ✅ get_node_essentials preferred over get_node_info (5KB vs 100KB+)
+- ✅ get_node preferred over get_node({detail: "full"}) (5KB vs 100KB+)
 - ✅ Validation profiles: minimal/runtime/ai-friendly/strict
 - ✅ Smart parameters: branch="true"/"false" for IF, case=N for Switch
 - ✅ Auto-sanitization runs on ALL nodes during any update
@@ -154,9 +154,9 @@ This log contains real responses from n8n-mcp tools to inform accurate skill con
 ## Tools Availability Summary
 
 **Available WITHOUT n8n API**:
-- search_nodes, list_nodes, get_node_essentials ✅
-- validate_node_minimal, validate_node_operation ✅
-- validate_workflow, get_property_dependencies ✅
+- search_nodes, search_nodes, get_node ✅
+- validate_node({mode: "minimal"}), validate_node ✅
+- validate_workflow, get_node({mode: "search_properties"}) ✅
 - search_templates, get_template, list_tasks ✅
 
 **Requires n8n API** (AVAILABLE at n8n-test.n8n-mcp.com):

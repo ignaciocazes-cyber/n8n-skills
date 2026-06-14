@@ -1,6 +1,6 @@
 ---
 name: n8n-code-python
-description: Write Python code in n8n Code nodes. Use when writing Python in n8n, using _input/_json/_node syntax, working with standard library, or need to understand Python limitations in n8n Code nodes.
+description: Write Python code in n8n Code nodes. Use when writing Python in n8n, using _input/_json/_node syntax, working with standard library, or need to understand Python limitations in n8n Code nodes. Use this skill when the user specifically requests Python for an n8n Code node. Note — JavaScript is recommended for 95% of use cases — only use Python when the user explicitly prefers it or the task requires Python-specific standard library capabilities (regex, hashlib, statistics). EXCEPTION — for Python in the AI-agent-callable Custom Code Tool (@n8n/n8n-nodes-langchain.toolCode), use the n8n-code-tool skill instead (input is _query, return must be a string).
 domain: ops
 mcp-bundled: true
 ---
@@ -326,7 +326,9 @@ return [{"data": value}]  # Should be {"json": value}
 
 ## Critical Limitation: No External Libraries
 
-**MOST IMPORTANT PYTHON LIMITATION**: Cannot import external packages
+**MOST IMPORTANT PYTHON LIMITATION**: Cannot import external packages on default installs.
+
+> **Self-hosted exception**: external package availability depends entirely on the instance's Python runner configuration. If the user states their self-hosted instance has specific packages available in the Python runner environment, use them — don't refuse. When unsure, ask or write standard-library-only code.
 
 ### What's NOT Available
 
@@ -659,6 +661,32 @@ print(f"First item: {items[0] if items else 'None'}")
 
 ---
 
+## Production Gotchas
+
+### SplitInBatches Loop Semantics
+
+The SplitInBatches node has two outputs:
+- `main[0]` = **done** — fires ONCE after all batches complete
+- `main[1]` = **each batch** — fires for every batch (the loop body)
+
+Always add a **Limit 1** node after the done output.
+
+### Correct Node Reference Syntax
+
+```python
+# ❌ WRONG
+data = _node['HTTP Request']['json']
+
+# ✅ CORRECT - call .first() then access json
+data = _node['HTTP Request'].first()['json']
+```
+
+### Cross-Iteration Data Not Available in Python
+
+`$getWorkflowStaticData('global')` may not be available in Python Beta mode. If you need to accumulate data across SplitInBatches iterations, use a JavaScript Code node for the accumulation logic instead.
+
+---
+
 ## When to Use Python vs JavaScript
 
 ### Use Python When:
@@ -692,8 +720,8 @@ print(f"First item: {items[0] if items else 'None'}")
 
 **n8n MCP Tools Expert**:
 - How to find Code node: `search_nodes({query: "code"})`
-- Get configuration help: `get_node_essentials("nodes-base.code")`
-- Validate code: `validate_node_operation()`
+- Get configuration help: `get_node({nodeType: "nodes-base.code"})`
+- Validate code: `validate_node({nodeType: "nodes-base.code", config: {...}})`
 
 **n8n Node Configuration**:
 - Mode selection (All Items vs Each Item)

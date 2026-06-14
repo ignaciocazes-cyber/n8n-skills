@@ -310,12 +310,12 @@ Create as needed:
 ```javascript
 // Node discovery
 search_nodes({query: "keyword"})
-list_nodes({category: "trigger"})
-get_node_essentials({nodeType: "nodes-base.webhook"})
+search_nodes({category: "trigger"})
+get_node({nodeType: "nodes-base.webhook"})
 
 // Validation
-validate_node_minimal({nodeType: "nodes-base.slack", config: {}})
-validate_node_operation({nodeType: "nodes-base.slack", config: {...}, profile: "runtime"})
+validate_node({mode: "minimal"})({nodeType: "nodes-base.slack", config: {}})
+validate_node({nodeType: "nodes-base.slack", config: {...}, profile: "runtime"})
 
 // Templates
 search_templates({query: "webhook"})
