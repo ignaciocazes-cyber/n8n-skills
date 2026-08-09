@@ -2,6 +2,7 @@
 
 **Expert Claude Code skills for building flawless n8n workflows using the n8n-mcp MCP server**
 
+[![skills.sh](https://skills.sh/b/czlonkowski/n8n-skills)](https://skills.sh/czlonkowski/n8n-skills)
 [![GitHub stars](https://img.shields.io/github/stars/czlonkowski/n8n-skills?style=social)](https://github.com/czlonkowski/n8n-skills)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![n8n-mcp](https://img.shields.io/badge/n8n--mcp-compatible-green.svg)](https://github.com/czlonkowski/n8n-mcp)
@@ -14,7 +15,7 @@
 
 ## 🎯 What is this?
 
-This repository contains **8 complementary Claude Code skills** that teach AI assistants how to build production-ready n8n workflows using the [n8n-mcp](https://github.com/czlonkowski/n8n-mcp) MCP server.
+This repository contains **14 complementary Claude Code skills** — plus an always-on router skill and a hooks enforcement layer — that teach AI assistants how to build production-ready n8n workflows using the [n8n-mcp](https://github.com/czlonkowski/n8n-mcp) MCP server, and how to deploy the self-hosted n8n that runs them.
 
 ### Why These Skills Exist
 
@@ -33,7 +34,7 @@ These skills solve these problems by teaching Claude:
 
 ---
 
-## 📚 The 8 Skills
+## 📚 The 14 Skills
 
 ### 1. **n8n Expression Syntax**
 Teaches correct n8n expression syntax and common patterns.
@@ -98,13 +99,13 @@ Operation-aware node configuration guidance.
 ### 6. **n8n Code JavaScript**
 Write effective JavaScript code in n8n Code nodes.
 
-**Activates when**: Writing JavaScript in Code nodes, troubleshooting Code node errors, making HTTP requests with $helpers, working with dates.
+**Activates when**: Writing JavaScript in Code nodes, troubleshooting Code node errors, making HTTP requests with `this.helpers` (the `$helpers` global), working with dates.
 
 **Key Features**:
 - Data access patterns ($input.all(), $input.first(), $input.item)
 - **Critical gotcha**: Webhook data under `$json.body`
 - Correct return format: `[{json: {...}}]`
-- Built-in functions ($helpers.httpRequest(), DateTime, $jmespath())
+- Built-in functions (`this.helpers.httpRequest()` — the bare `$helpers` global is undefined in the task-runner sandbox; prefer the HTTP Request node for non-trivial/authenticated calls — DateTime, $jmespath())
 - Top 5 error patterns with solutions (covering 62%+ of failures)
 - 10 production-tested patterns
 
@@ -134,6 +135,86 @@ Write code for the AI-agent-callable Custom Code Tool (`@n8n/n8n-nodes-langchain
 - Sandbox limits: no `$input`, `$helpers`, `$json`, `$getWorkflowStaticData`, no state across calls
 - Three signature error strings with causes and fixes
 - When to use Code Tool vs `toolWorkflow` vs HTTP Request Tool
+
+### 9. **n8n Error Handling**
+Make failures loud, structured, and recoverable.
+
+**Activates when**: Building webhook/API or unattended workflows, wiring error outputs, setting retries, designing 4xx/5xx responses, or chasing silent failures.
+
+**Key Features**:
+- Per-node error output: the two-step `onError: continueErrorOutput` + wire `main[1]` trap
+- `retryOnFail` self-healing for flaky network calls
+- 4xx/5xx response-shape mapping (and the `responseCode`-defaults-to-200 gotcha)
+- Error Trigger workflows for unattended runs
+
+### 10. **n8n Binary & Data**
+Handle files, images, and binary data correctly.
+
+**Activates when**: Working with files, images, PDFs, attachments, uploads/downloads, vision input, or passing a file to/from an AI agent tool.
+
+**Key Features**:
+- `$binary` vs `$json` — file contents never live in `$json`
+- Keeping binary alive across JSON transforms with Merge
+- The agent-tool binary boundary (pre-stage to storage, pass keys/URLs)
+- CDN/URL requirement for showing images in chat surfaces
+
+### 11. **n8n Sub-workflows**
+Build reusable, composable sub-workflows.
+
+**Activates when**: Extracting shared logic, building multi-step or reused workflows, or any workflow over ~10 nodes.
+
+**Key Features**:
+- Execute Workflow Trigger with "Define Below" typed inputs (not passthrough)
+- `mode: all` vs `each` and `waitForSubWorkflow` (the only true parallelization)
+- Verb-first prefix naming for discovery (MCP can't filter by tags)
+- Stateless vs stateful design; N+1 split-by-input-shape
+
+### 12. **n8n AI Agents**
+Design n8n AI agents the right way.
+
+**Activates when**: Building any `@n8n/n8n-nodes-langchain.*` node — AI Agent, LLM chain, Text Classifier — or working with tool calling, `$fromAI`, memory, structured output, RAG, or chat bots.
+
+**Key Features**:
+- Agent vs LLM Chain vs Text Classifier; the model/memory/tools/outputParser slots
+- Tool names & descriptions ARE the prompt; `$fromAI` parameter anatomy
+- Structured output with autoFix; memory + sessionId; human-in-the-loop review
+- Chat shell+core+sub-agent topology with anti-loop filtering
+
+### 13. **n8n Multi-Instance**
+Target the right n8n instance when an account has more than one.
+
+**Activates when**: The `n8n_instances` tool is available, the user mentions multiple instances/environments (prod vs staging, several clients), or a call returns an unexpected `NOT_FOUND` or wrong/empty data.
+
+**Key Features**:
+- `n8n_instances` `list`/`switch` shapes and the real error envelope (`UNKNOWN_INSTANCE`, `MULTI_INSTANCE_DISABLED`, …)
+- Switching in its own turn; the per-session binding that persists across reconnects/deploys
+- Verifying `current` before credential writes — the server fail-closes only the *ambiguous* case (`INSTANCE_AMBIGUOUS`); an explicit wrong switch still writes the secret silently
+- Recovering from a misroute (NOT_FOUND ≈ wrong instance, not a deletion) and copying objects between instances
+
+### 14. **n8n Self-Hosting** (deployment/ops)
+Deploy a production self-hosted n8n end-to-end to a fresh Linux VM.
+
+**Activates when**: Self-hosting, installing, or deploying n8n on your own server/VPS (Hetzner, DigitalOcean, EC2, bare metal) — single or queue mode — or updating/backing-up/hardening it. Not for n8n Cloud, and not for building workflows.
+
+**Key Features**:
+- Docker Compose behind **Caddy** with automatic HTTPS; asks **single vs queue mode** first
+- Single (SQLite) and queue (main + Redis + Postgres + workers) templates, secret-free and domain-free
+- Generates fresh secrets on the box; secure defaults (explicit encryption key, no published internal ports, telemetry off, env-access blocked, execution pruning)
+- DNS/ports preflight, end-to-end verify (cert + reachability), and Day-2 (update / backup / restore)
+
+> This is the pack's one **deployment** skill; it triggers on its own description and is not part of the workflow-building router/hooks flow.
+
+---
+
+## 🪝 Enforcement Layer (hooks + router)
+
+Beyond the capability skills, the plugin ships an **always-on enforcement layer** so the right guidance surfaces at the moment of decision — not only when a query happens to match a skill description.
+
+- **Router skill (`using-n8n-mcp-skills`)** — loaded into every session by a `SessionStart` hook. It routes you to the right skill, summarizes every n8n-mcp tool, and states the cross-cutting rules. It re-fires on resume/clear/compact so it survives context compaction.
+- **PreToolUse hooks** — before high-impact n8n-mcp calls, a short reminder points at the relevant skill. Looking up a Set, Code, Merge, Loop Over Items, DateTime, Data Table, or AI Agent node via `get_node` fires a node-specific reminder (and re-fires each time, because a re-lookup usually means you're reconsidering the same decision). Calls to `n8n_instances` and `n8n_manage_credentials` fire one-shot reminders pointing at the multi-instance and credential-discipline skills.
+- **PostToolUse hook** — after `validate_workflow`, it inspects the workflow's node types and routes you to the skills that own the remaining risks, with the reminder that *validation passing is necessary, not sufficient*.
+
+Hooks run only in the **Claude Code / Codex plugin** install. On Claude.ai (individual skill uploads) the skills still activate by description — the pack degrades gracefully, just without the proactive nudges. Every hook fails open and never blocks a tool call.
 
 ---
 
@@ -178,7 +259,7 @@ cp -r n8n-skills/skills/* ~/.claude/skills/
 ### Claude.ai
 
 1. Download individual skill folders from `skills/`
-2. Zip each skill folder
+2. Zip each skill folder (or grab prebuilt zips from the [latest release](https://github.com/czlonkowski/n8n-skills/releases/latest))
 3. Upload via Settings → Capabilities → Skills
 
 ### API / SDK
@@ -282,6 +363,8 @@ MIT License - see [LICENSE](LICENSE) file for details.
 - Website: [www.aiadvisors.pl/en](https://www.aiadvisors.pl/en)
 - Part of the [n8n-mcp project](https://github.com/czlonkowski/n8n-mcp)
 
+The hooks enforcement layer adapts patterns from the official [n8n Skills](https://github.com/n8n-io/skills) project (Apache-2.0), retargeted for n8n-mcp and rewritten in our own voice. See [NOTICES](NOTICES).
+
 ---
 
 ## 🔗 Related Projects
@@ -293,7 +376,7 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ## 📊 What's Included
 
-- **8** complementary skills that work together
+- **14** complementary skills that work together
 - **525+** n8n nodes supported
 - **2,653+** workflow templates for examples
 - **10** production-tested Code node patterns
@@ -302,3 +385,9 @@ MIT License - see [LICENSE](LICENSE) file for details.
 ---
 
 **Ready to build flawless n8n workflows? Get started now!** 🚀
+
+---
+
+## 💼 Need it built for you?
+
+Work with **[AiAdvisors](https://www.aiadvisors.pl/en)** — automation audits, builds, and operations by the team behind n8n-mcp and n8n-skills.

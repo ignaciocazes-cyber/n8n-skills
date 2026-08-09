@@ -1,7 +1,7 @@
 {
   "name": "n8n-mcp-skills",
-  "version": "1.11.1",
-  "description": "Expert skills for building n8n workflows with n8n-mcp",
+  "version": "1.29.0",
+  "description": "Expert skills for building n8n workflows with n8n-mcp, with a hooks enforcement layer",
   "author": {
     "name": "Romuald Członkowski",
     "url": "https://www.aiadvisors.pl/en"
