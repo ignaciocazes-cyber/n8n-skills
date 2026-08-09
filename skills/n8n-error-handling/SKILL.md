@@ -1,6 +1,8 @@
 ---
 name: n8n-error-handling
 description: Wire n8n error handling so failures are loud, structured, and recoverable. Use when building any webhook/API workflow, a scheduled or unattended workflow, or any path where a silent failure would drop user-visible work — and whenever the user mentions error handling, onError, continueErrorOutput, error branches/outputs, retries, retryOnFail, Respond to Webhook status codes, 4xx/5xx, Error Trigger, or "my workflow fails silently". Covers per-node error outputs and wiring, retry/self-healing, error-trigger workflows, and 4xx/5xx response shapes.
+domain: ops
+mcp-bundled: true
 ---
 
 # n8n Error Handling

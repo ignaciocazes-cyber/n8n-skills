@@ -1,6 +1,8 @@
 ---
 name: n8n-multi-instance
 description: Use when an n8n-mcp account targets more than one n8n instance — i.e. the `n8n_instances` tool is available, the user mentions multiple n8n instances or environments (prod vs staging, several teams or clients), a workflow / datatable / credential / execution call returns an unexpected NOT_FOUND or reads data you don't recognize, or a credential create/update/delete is refused with an `INSTANCE_AMBIGUOUS` error. Covers choosing and switching which instance this MCP session targets, verifying the target before high-stakes work — credential writes above all — and recovering from misroutes and ambiguous-write fail-closes. Always consult this skill before operating on a specific instance, before any credential create/update/delete on a multi-instance account, or when a call hits the wrong/empty data or an `INSTANCE_AMBIGUOUS` error.
+domain: ops
+mcp-bundled: true
 ---
 
 # Working with multiple n8n instances over MCP
