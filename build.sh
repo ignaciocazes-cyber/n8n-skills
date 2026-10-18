@@ -68,6 +68,21 @@ for skill in "${SKILLS[@]}"; do
     (cd skills && zip -rq "../$DIST_DIR/${skill}-v${VERSION}.zip" "${skill}/" -x "*.DS_Store")
 done
 
+# Build skills-only bundle (for ChatGPT and other SKILL.md hosts)
+# Structure: one skill-name.skill file per skill at zip root, no plugin
+# manifests or hooks. A .skill file is the individual skill zip under another
+# extension, so hosts whose upload dialog takes several files can install the
+# whole pack in one go: unzip, then select every .skill file.
+echo "📦 Building skills-only bundle..."
+STAGE_DIR=$(mktemp -d)
+trap 'rm -rf "$STAGE_DIR"' EXIT
+for skill in "${SKILLS[@]}"; do
+    cp "$DIST_DIR/${skill}-v${VERSION}.zip" "$STAGE_DIR/${skill}.skill"
+done
+cp LICENSE NOTICES NOTICES-APACHE-2.0.txt "$STAGE_DIR/"
+BUNDLE="$PWD/$DIST_DIR/n8n-skills-all-v${VERSION}.zip"
+(cd "$STAGE_DIR" && zip -q "$BUNDLE" *.skill LICENSE NOTICES NOTICES-APACHE-2.0.txt)
+
 # Build complete bundle (for Claude Code)
 echo "📦 Building complete bundle for Claude Code..."
 zip -rq "$DIST_DIR/n8n-mcp-skills-v${VERSION}.zip" \

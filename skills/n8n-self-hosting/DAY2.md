@@ -20,6 +20,12 @@ above avoids the full-stack teardown and is equally safe for data — either wor
 
 - **Queue mode:** `pull` + `up -d` updates main and workers together — keep them on the **same
   version** (a mixed-version cluster misbehaves).
+- **External task runners:** the `n8nio/runners` sidecar(s) must move to exactly the same
+  version. Drive both images from `N8N_IMAGE_TAG` so one bump updates both. If you mounted a
+  custom `n8n-task-runners.json`, diff it against the new image's default first
+  (`docker run --rm --entrypoint cat n8nio/runners:<new-tag> /etc/n8n-task-runners.json`). A
+  stale copy can silently drop env vars that a newer launcher passes to the runners. See
+  `TASK_RUNNERS.md`.
 - On restart, containers get `N8N_GRACEFUL_SHUTDOWN_TIMEOUT` (default 30 s) to finish in-flight
   executions before being killed — raise it if long-running workflows keep getting cut off
   mid-update. (The old `QUEUE_WORKER_TIMEOUT` is deprecated in favor of this.)
@@ -33,6 +39,34 @@ above avoids the full-stack teardown and is equally safe for data — either wor
   just majors. For instances a business depends on, docs recommend trying the update on a
   staging copy first. Official update guide:
   <https://docs.n8n.io/deploy/host-n8n/keep-n8n-running/update-n8n>.
+
+## Change a setting (env var)
+
+The most common day-2 operation, and the one with the most ways to go subtly wrong.
+
+```bash
+cd <DATA_FOLDER>
+# edit .env (values) or docker-compose.yml (which vars exist)
+docker compose config -q                      # catch YAML/interpolation errors before restarting
+docker compose up -d --no-deps n8n            # recreate just this service
+```
+
+- **`--no-deps` keeps the blast radius small.** Without it Compose may also touch the services
+  this one depends on. Restart only what actually needs the new value.
+- **Don't restart via a wrapper script that pulls.** A `run.sh`/`update.sh` that does
+  `docker compose pull && up -d` turns "apply a setting" into "apply a setting *and* upgrade
+  n8n" — you then debug two changes at once, and the upgrade may have run a forward-only DB
+  migration you didn't plan for. Use plain `up -d` for env changes; use the update recipe above
+  when you actually mean to update.
+- **Take a copy of the compose file first** (`cp docker-compose.yml docker-compose.yml.bak-$(date +%F)`)
+  so reverting is one `cp` rather than a reconstruction from memory.
+- **Queue mode: decide whether the var is behavioural.** If it changes how n8n behaves rather
+  than what public URL it serves, it belongs in the `x-n8n-env` anchor and the workers need
+  recreating too (`docker compose up -d --no-deps n8n n8n-worker`). Re-run the parity diff from
+  `QUEUE_MODE.md` afterwards — that check is what turns "I think I set it" into "it's set
+  everywhere it needs to be".
+- **Never restart to apply a changed `N8N_ENCRYPTION_KEY`.** That doesn't re-key anything; it
+  makes every stored credential undecryptable. The key is set once, at first boot, forever.
 
 ## Back up — what actually matters
 

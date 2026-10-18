@@ -53,6 +53,8 @@ n8n-skills/
 - Teaches correct n8n expression syntax ({{}} patterns)
 - Covers common mistakes and fixes
 - Critical gotcha: Webhook data under `$json.body`
+- `$jmespath(object, query)` for querying nested JSON in one expression (quoting rules: `'string'`, `` `number` ``, `"field"`; `json.` prefix over `.all()`)
+- Runtime JS errors inside `{{ }}` resolve silently to null (only n8n's own ExpressionErrors fail the node) — test with real items
 
 ### 2. n8n MCP Tools Expert (HIGHEST PRIORITY)
 - Teaches how to use n8n-mcp MCP tools effectively
@@ -78,8 +80,8 @@ n8n-skills/
 - Data access patterns, `$helpers`, DateTime
 
 ### 7. n8n Code Python
-- Write Python in n8n Code nodes
-- Limitations awareness (no external libraries)
+- Native Python (n8n 2.x, `pythonNative`): only `_items`/`_item`, dict access; the Pyodide helpers (`_input`, `_json`, `_node`, `_now`, `_jmespath`) raise NameError
+- Imports blocked by default (instance allowlist; none on Cloud); sandbox limits (no classes/`type()`/dunders, `nonlocal` not `global`); verified return shapes and the `continueRegularOutput` passthrough trap
 
 ### 8. n8n Code Tool
 - Write code for the AI-agent-callable Custom Code Tool (`@n8n/n8n-nodes-langchain.toolCode`)
@@ -103,12 +105,15 @@ n8n-skills/
 - Tool names/descriptions as prompt; structured output + autoFix; memory/sessionId; human review; chat topologies
 
 ### 13. n8n Multi-Instance
-- `n8n_instances` `list`/`switch`; per-session target binding that persists across reconnects/deploys; uniform resolution across all tools
-- Verify `current` before credential writes (the server fail-closes only the ambiguous case with `INSTANCE_AMBIGUOUS`); NOT_FOUND ≈ wrong-instance misroute, not deletion; copy-between-instances flow
+- Per-call `instance: "<name>"` on every n8n tool (backend 0.1.120+ / n8n-mcp 2.94.0+): stateless, the preferred way to target; unknown names fail closed with `INSTANCE_NOT_FOUND`
+- `n8n_instances` `list`/`switch`; `switch` sets the default for unnamed calls, shared by every chat on a hosted connection
+- Name the instance on credential writes (never `INSTANCE_AMBIGUOUS`); NOT_FOUND ≈ wrong-instance misroute, not deletion; copy-between-instances flow without switching
 
 ### 14. n8n Self-Hosting (deployment/ops, not workflow-building)
 - Deploy production self-hosted n8n end-to-end to a fresh Linux VM: Docker Compose behind Caddy (auto-TLS), single OR queue mode (asks the user first)
 - Secret-free/domain-free templates in `assets/`; fresh secrets generated on the box; secure defaults; DNS/ports preflight; Day-2 update/backup/restore
+- Python Code nodes need task runners in external mode: an `n8nio/runners` sidecar on the exact n8n version (the stock image has no Python 3, so internal mode fails with "Python runner unavailable"); one sidecar per queue worker; Python imports are all blocked until allowlisted in the sidecar's `/etc/n8n-task-runners.json` (`TASK_RUNNERS.md`)
+- Queue-mode env parity: the `x-n8n-env` anchor is the single source of the behavioural environment; only public-URL/proxy vars are main-only. Optional backend modules (`N8N_ENABLED_MODULES`, e.g. `agents`) must reach the workers or executions fail at runtime with `EntityMetadataNotFoundError`
 - Triggers on its own description; intentionally NOT wired into the workflow-building router or hooks (no relevant MCP tools)
 
 ## Key MCP Tools
@@ -213,7 +218,7 @@ Available as:
 
 ## Credits
 
-Conceived by Romuald Członkowski - [www.aiadvisors.pl/en](https://www.aiadvisors.pl/en)
+Conceived by Romuald Członkowski - [aiadvisors.pl/en](https://aiadvisors.pl/en)
 
 Part of the n8n-mcp project.
 

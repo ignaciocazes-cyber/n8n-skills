@@ -11,6 +11,8 @@
 
 [![n8n Skills Introduction](skills.png)](https://youtu.be/e6VvRqmUY2Y?si=6Igply3cadjO6Xx0)
 
+> 💼 **Need it built for you?** Work with [AiAdvisors — n8n automation audits, builds, and operations](https://aiadvisors.pl/en), run by the author of n8n-mcp and n8n-skills.
+
 ---
 
 ## 🎯 What is this?
@@ -116,11 +118,10 @@ Write Python code in n8n Code nodes with proper limitations awareness.
 
 **Key Features**:
 - **Important**: Use JavaScript for 95% of use cases
-- Python data access (_input, _json, _node)
-- **Critical limitation**: No external libraries (requests, pandas, numpy)
-- Standard library reference (json, datetime, re, etc.)
-- Workarounds for missing libraries
-- Common Python patterns for n8n
+- Native Python (n8n 2.x): only `_items` / `_item`, dict access — the Pyodide helpers (`_input`, `_json`, `_node`, `_now`) are gone
+- **Critical limitation**: every import is blocked unless the instance allowlists it (none on n8n Cloud)
+- Sandbox limits (no classes, `type()`, `getattr`, dunders; `nonlocal` not `global`) and verified return shapes
+- 12 import-free patterns, each verified on a live instance
 
 ### 8. **n8n Code Tool**
 Write code for the AI-agent-callable Custom Code Tool (`@n8n/n8n-nodes-langchain.toolCode`) — a different node from the regular Code node with a different contract.
@@ -183,12 +184,13 @@ Design n8n AI agents the right way.
 ### 13. **n8n Multi-Instance**
 Target the right n8n instance when an account has more than one.
 
-**Activates when**: The `n8n_instances` tool is available, the user mentions multiple instances/environments (prod vs staging, several clients), or a call returns an unexpected `NOT_FOUND` or wrong/empty data.
+**Activates when**: The `n8n_instances` tool is available, the user mentions multiple instances/environments (prod vs staging, several clients) or several agents working at once, or a call returns an unexpected `NOT_FOUND` or wrong/empty data.
 
 **Key Features**:
-- `n8n_instances` `list`/`switch` shapes and the real error envelope (`UNKNOWN_INSTANCE`, `MULTI_INSTANCE_DISABLED`, …)
-- Switching in its own turn; the per-session binding that persists across reconnects/deploys
-- Verifying `current` before credential writes — the server fail-closes only the *ambiguous* case (`INSTANCE_AMBIGUOUS`); an explicit wrong switch still writes the secret silently
+- The per-call `instance` argument: name the target on each call, so parallel agents on one connection can work on different instances at once
+- `n8n_instances` `list`/`switch` shapes and the real error envelopes (`INSTANCE_NOT_FOUND`, `INSTANCE_AMBIGUOUS`, `UNKNOWN_INSTANCE`, …)
+- `switch` as the shared default for unnamed calls, and why it moves every chat on a hosted connection
+- Naming the instance on credential writes — a named write is never ambiguous
 - Recovering from a misroute (NOT_FOUND ≈ wrong instance, not a deletion) and copying objects between instances
 
 ### 14. **n8n Self-Hosting** (deployment/ops)
@@ -261,6 +263,12 @@ cp -r n8n-skills/skills/* ~/.claude/skills/
 1. Download individual skill folders from `skills/`
 2. Zip each skill folder (or grab prebuilt zips from the [latest release](https://github.com/czlonkowski/n8n-skills/releases/latest))
 3. Upload via Settings → Capabilities → Skills
+
+### ChatGPT and other SKILL.md hosts
+
+1. Download `n8n-skills-all-vX.Y.Z.zip` from the [latest release](https://github.com/czlonkowski/n8n-skills/releases/latest)
+2. Unzip it — it holds one `.skill` file per skill (e.g. `n8n-expression-syntax.skill`). Don't upload the bundle itself; it is a container, not a skill
+3. In the host's skill upload dialog, select all the `.skill` files at once
 
 ### API / SDK
 
@@ -360,7 +368,7 @@ MIT License - see [LICENSE](LICENSE) file for details.
 ## 🙏 Credits
 
 **Conceived by Romuald Członkowski**
-- Website: [www.aiadvisors.pl/en](https://www.aiadvisors.pl/en)
+- Website: [aiadvisors.pl/en](https://aiadvisors.pl/en)
 - Part of the [n8n-mcp project](https://github.com/czlonkowski/n8n-mcp)
 
 The hooks enforcement layer adapts patterns from the official [n8n Skills](https://github.com/n8n-io/skills) project (Apache-2.0), retargeted for n8n-mcp and rewritten in our own voice. See [NOTICES](NOTICES).
@@ -390,4 +398,4 @@ The hooks enforcement layer adapts patterns from the official [n8n Skills](https
 
 ## 💼 Need it built for you?
 
-Work with **[AiAdvisors](https://www.aiadvisors.pl/en)** — automation audits, builds, and operations by the team behind n8n-mcp and n8n-skills.
+Work with **[AiAdvisors — n8n automation audits, builds, and operations](https://aiadvisors.pl/en)**, run by the author of n8n-mcp and n8n-skills.
