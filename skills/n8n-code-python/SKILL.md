@@ -1,6 +1,8 @@
 ---
 name: n8n-code-python
 description: Write Python in n8n Code nodes (native Python, `language` pythonNative, n8n 2.x). Use when the user explicitly wants Python in a Code node, when migrating old Pyodide/"Python (Beta)" code that used _input/_json/_node/_now, or when a Python Code node fails with NameError, "Security violations detected", "Import of standard library module … is disallowed", "__build_class__ not found", "A 'json' property isn't a dictionary", or "Python runner unavailable". Covers the only two variables (_items/_item), dict-only access, imports blocked by default, the sandbox's denied builtins, accepted return shapes, and how errors interact with onError. JavaScript is the default for Code nodes — native Python has no n8n helpers and, by default, no imports. EXCEPTION — for Python in the AI-agent-callable Custom Code Tool (@n8n/n8n-nodes-langchain.toolCode), use the n8n-code-tool skill instead (input is _query, return must be a string).
+domain: ops
+mcp-bundled: true
 ---
 
 # Python Code Node (native)
